@@ -18,6 +18,10 @@ defmodule LittlechatWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+
+    scope "/room" do
+      live "/new", Room.NewLive
+    end
   end
 
   # Other scopes may use custom stacks.
