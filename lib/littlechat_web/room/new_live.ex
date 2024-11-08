@@ -45,13 +45,14 @@ defmodule LittlechatWeb.Room.NewLive do
     IO.inspect(inspect(current_user), label: "current_user")
 
     case(Organizer.create_room(current_user, room_params)) do
-      {:ok, _room} ->
+      {:ok, room} ->
         form = Organizer.change_room(%Room{}) |> to_form
+        socket = push_navigate(socket, to: "/room/view/#{room.slug}")
         {:noreply, assign(socket, form: form)}
 
       {:error, changeset} ->
         form = to_form(changeset)
-        assign(socket, form: form)
+        socket = assign(socket, form: form)
         {:noreply, socket}
     end
   end

@@ -26,6 +26,7 @@ defmodule LittlechatWeb.Router do
       on_mount: [{LittlechatWeb.UserAuth, :ensure_authenticated}] do
       scope "/room" do
         live "/new", Room.NewLive
+        live "/view/:slug", Room.ShowLive
       end
     end
   end
