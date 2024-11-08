@@ -5,6 +5,8 @@ defmodule Littlechat.Organizer.Room do
   schema "rooms" do
     field :title, :string
     field :slug, :string
+    belongs_to :user, Littlechat.Accounts.User
+    has_many :participants, Littlechat.Accounts.User
 
     timestamps(type: :utc_datetime)
   end
@@ -14,7 +16,7 @@ defmodule Littlechat.Organizer.Room do
   @doc false
   def changeset(room, attrs) do
     room
-    |> cast(attrs, @fields)
+    |> cast(attrs, @fields ++ [:user_id])
     |> validate_required(@fields)
     |> format_slug()
     |> unique_constraint(:slug)

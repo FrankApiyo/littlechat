@@ -8,6 +8,7 @@ defmodule Littlechat.Accounts.User do
     field :hashed_password, :string, redact: true
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
+    belongs_to :room, Littlechat.Organizer.Room
 
     timestamps(type: :utc_datetime)
   end

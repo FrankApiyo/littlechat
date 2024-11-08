@@ -52,16 +52,17 @@ defmodule Littlechat.Organizer do
 
   ## Examples
 
-      iex> create_room(%{field: value})
+      iex> user = %User{id: 1}
+      iex> create_room(user, %{field: value})
       {:ok, %Room{}}
 
-      iex> create_room(%{field: bad_value})
+      iex> create_room(user, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_room(attrs \\ %{}) do
+  def create_room(user, attrs \\ %{}) do
     %Room{}
-    |> Room.changeset(attrs)
+    |> Room.changeset(Map.put(attrs, "user_id", user.id))
     |> Repo.insert()
   end
 

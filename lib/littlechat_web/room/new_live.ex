@@ -7,7 +7,6 @@ defmodule LittlechatWeb.Room.NewLive do
   def mount(_params, _session, socket) do
     change_set = Organizer.change_room(%Room{})
     form = to_form(change_set)
-    IO.inspect(inspect(form))
     {:ok, assign(socket, title: "", form: form)}
   end
 
@@ -42,7 +41,10 @@ defmodule LittlechatWeb.Room.NewLive do
   end
 
   def handle_event("save", %{"room" => room_params}, socket) do
-    case(Organizer.create_room(room_params)) do
+    %{current_user: current_user} = socket.assigns
+    IO.inspect(inspect(current_user), label: "current_user")
+
+    case(Organizer.create_room(current_user, room_params)) do
       {:ok, _room} ->
         form = Organizer.change_room(%Room{}) |> to_form
         {:noreply, assign(socket, form: form)}
