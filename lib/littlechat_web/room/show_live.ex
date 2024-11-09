@@ -45,6 +45,13 @@ defmodule LittlechatWeb.Room.ShowLive do
           <%= meta.username %>
         </li>
       </ul>
+
+      <hr />
+
+      <video id="local-video" playsinline autoplay muted width="600" style="border: 2px solid black;">
+      </video>
+
+      <button class="button" phx-hook="JoinCall" id="join-call">Join Call</button>
     </div>
     """
   end
