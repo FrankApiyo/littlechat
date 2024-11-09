@@ -3,3 +3,7 @@
 @import "tailwindcss/utilities";
 
 /* This file is for your main application CSS */
+
+#local-video {
+  transform: rotateY(180deg);
+}
