@@ -12,6 +12,7 @@ defmodule Littlechat.Application do
       Littlechat.Repo,
       {DNSCluster, query: Application.get_env(:littlechat, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Littlechat.PubSub},
+      LittlechatWeb.Presence,
       # Start the Finch HTTP client for sending emails
       {Finch, name: Littlechat.Finch},
       # Start a worker by calling: Littlechat.Worker.start_link(arg)
