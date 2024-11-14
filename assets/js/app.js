@@ -23,6 +23,7 @@ import { LiveSocket } from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
+
 let localStream;
 async function initStream() {
   try {
@@ -39,6 +40,33 @@ Hooks.JoinCall = {
     initStream();
   },
 };
+
+var users = {}
+function addUserConnection(username) {
+  if (users[username] == undefined) {
+    users[username] = {
+      peerConnection: null
+    }
+  }
+
+  return users
+}
+
+function removeUserConnection(username) {
+  delete users[username]
+
+  return users
+}
+
+Hooks.InitUser = {
+  mounted() {
+    addUserConnection(this.el.dataset.username)
+  },
+
+  destroyed() {
+    removeUserConnection(this.el.dataset.username)
+  }
+}
 
 let liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,

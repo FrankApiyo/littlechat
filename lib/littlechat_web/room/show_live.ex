@@ -14,7 +14,7 @@ defmodule LittlechatWeb.Room.ShowLive do
 
       {:ok, _} =
         Presence.track(self(), @topic, current_user.id, %{
-          username: current_user.email |> String.split("@") |> hd()
+          username: current_user |> user_to_username
         })
     end
 
@@ -31,8 +31,19 @@ defmodule LittlechatWeb.Room.ShowLive do
     end
   end
 
+  def user_to_username(user) do
+    user.email |> String.split("@") |> hd()
+  end
+
   def simple_presence_map(presences) do
     Enum.into(presences, %{}, fn {user_id, %{metas: [meta | _]}} -> {user_id, meta} end)
+  end
+
+  def all_users_but_me(all_users, current_user) do
+    Enum.filter(all_users, fn user_map ->
+      {_key, value} = user_map
+      value.username != user_to_username(current_user)
+    end)
   end
 
   def render(assigns) do
@@ -48,8 +59,24 @@ defmodule LittlechatWeb.Room.ShowLive do
 
       <hr />
 
-      <video id="local-video" playsinline autoplay muted width="600" style="border: 2px solid black;">
-      </video>
+      <div class="streams">
+        <video id="local-video" playsinline autoplay muted width="600" style="border: 2px solid red;">
+        </video>
+
+        <hr />
+        <video
+          :for={{_user_id, meta} <- all_users_but_me(@presences, @current_user)}
+          data-username={meta.username}
+          id={"video-remote-#{meta.username}"}
+          phx-hook="InitUser"
+          playsinline
+          autoplay
+          muted
+          width="600"
+          style="border: 2px solid green;"
+        >
+        </video>
+      </div>
 
       <button class="button" phx-hook="JoinCall" id="join-call">Join Call</button>
     </div>
