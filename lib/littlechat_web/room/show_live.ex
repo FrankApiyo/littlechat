@@ -12,14 +12,16 @@ defmodule LittlechatWeb.Room.ShowLive do
     if connected?(socket) do
       Phoenix.PubSub.subscribe(Littlechat.PubSub, @topic)
 
+      Phoenix.PubSub.subscribe(
+        Littlechat.PubSub,
+        "room: " <> slug <> ":" <> user_to_username(current_user)
+      )
+
       {:ok, _} =
         Presence.track(self(), @topic, current_user.id, %{
           username: current_user |> user_to_username
         })
     end
-
-    presences = Presence.list(@topic)
-    socket = assign(socket, :presences, simple_presence_map(presences))
 
     case Organizer.get_room(slug) do
       nil ->
@@ -27,8 +29,23 @@ defmodule LittlechatWeb.Room.ShowLive do
         {:ok, push_navigate(socket, to: "/404")}
 
       room ->
-        {:ok, assign(socket, room: room)}
+        presences = Presence.list(@topic)
+
+        {:ok,
+         socket
+         |> assign(room: room)
+         |> assign(:offer_requests, [])
+         |> assign(:presences, simple_presence_map(presences))}
     end
+  end
+
+  def send_direct_message(slug, to_user, event, payload) do
+    LittlechatWeb.Endpoint.broadcast_from(
+      self(),
+      "room: " <> slug <> ":" <> to_user,
+      event,
+      payload
+    )
   end
 
   def user_to_username(user) do
@@ -79,6 +96,17 @@ defmodule LittlechatWeb.Room.ShowLive do
       </div>
 
       <button class="button" phx-hook="JoinCall" id="join-call">Join Call</button>
+
+      <div id="offer-requests">
+        <%= for request <- @offer_requests do %>
+          <span
+            id={"offer-request-from-#{request.from_user}"}
+            phx-hook="HandleOfferRequest"
+            data-from-user-username={request.from_user}
+          >
+          </span>
+        <% end %>
+      </div>
     </div>
     """
   end
@@ -88,6 +116,10 @@ defmodule LittlechatWeb.Room.ShowLive do
       socket |> remove_presences(diff.leaves) |> add_presences(diff.joins)
 
     {:noreply, socket}
+  end
+
+  def handle_info(%{event: "request_offers", payload: request}, socket) do
+    {:noreply, socket |> assign(:offer_requests, socket.assigns.offer_requests ++ [request])}
   end
 
   def remove_presences(socket, leaves) do
@@ -104,5 +136,31 @@ defmodule LittlechatWeb.Room.ShowLive do
       )
 
     assign(socket, :presences, presences)
+  end
+
+  def handle_event(
+        "join_call",
+        _params,
+        %{
+          assigns: %{
+            presences: presences,
+            current_user: current_user,
+            room: %{slug: slug}
+          }
+        } = socket
+      ) do
+    for {_user_id, meta} <-
+          all_users_but_me(presences, current_user) do
+      send_direct_message(
+        slug,
+        meta.username,
+        "request_offers",
+        %{
+          from_user: user_to_username(current_user)
+        }
+      )
+    end
+
+    {:noreply, socket}
   end
 end

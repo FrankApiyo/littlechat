@@ -140,6 +140,14 @@ function createPeerConnection(lv, fromUser, offer) {
   return newPeerConnection
 }
 
+Hooks.HandleOfferRequest = {
+  mounted() {
+    console.log("new offer request from: ", this.el.dataset.fromUserUsername)
+    let fromUser = this.el.dataset.fromUserUsername
+    createPeerConnection(this, fromUser)
+  }
+}
+
 let liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   hooks: Hooks,
