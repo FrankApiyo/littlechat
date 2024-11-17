@@ -35,6 +35,9 @@ defmodule LittlechatWeb.Room.ShowLive do
          socket
          |> assign(room: room)
          |> assign(:offer_requests, [])
+         |> assign(:ice_candidate_offers, [])
+         |> assign(:sdp_offers, [])
+         |> assign(:answers, [])
          |> assign(:presences, simple_presence_map(presences))}
     end
   end
@@ -102,7 +105,43 @@ defmodule LittlechatWeb.Room.ShowLive do
           <span
             id={"offer-request-from-#{request.from_user}"}
             phx-hook="HandleOfferRequest"
-            data-from-user-username={request.from_user}
+            data-from-username={request.from_user}
+          >
+          </span>
+        <% end %>
+      </div>
+
+      <div id="sdp-offers">
+        <%= for sdp_offer <- @sdp_offers do %>
+          <span
+            id={"sdp-offer-#{sdp_offer["from_user"]}"}
+            phx-hook="HandleSdpOffer"
+            data-from-username={sdp_offer["from_user"]}
+            data-sdp={sdp_offer["description"]["sdp"]}
+          >
+          </span>
+        <% end %>
+      </div>
+
+      <div id="sdp-answers">
+        <%= for answer <- @answers do %>
+          <span
+            id={"sdp-offer-#{answer["from_user"]}"}
+            phx-hook="HandleAnswer"
+            data-from-username={answer["from_user"]}
+            data-sdp={answer["description"]["sdp"]}
+          >
+          </span>
+        <% end %>
+      </div>
+
+      <div id="ice-candidates">
+        <%= for ice_candidate_offer <- @ice_candidate_offers do %>
+          <span
+            id={"sdp-offer-#{ice_candidate_offer["from_user"]}"}
+            phx-hook="HandleIceCandidateOffer"
+            data-from-username={ice_candidate_offer["from_user"]}
+            data-ice-candidate={ice_candidate_offer["description"]}
           >
           </span>
         <% end %>
@@ -120,6 +159,19 @@ defmodule LittlechatWeb.Room.ShowLive do
 
   def handle_info(%{event: "request_offers", payload: request}, socket) do
     {:noreply, socket |> assign(:offer_requests, socket.assigns.offer_requests ++ [request])}
+  end
+
+  def handle_info(%{event: "new_ice_candidate", payload: payload}, socket) do
+    {:noreply,
+     socket |> assign(:ice_candidate_offers, socket.assigns.ice_candidate_offers ++ [payload])}
+  end
+
+  def handle_info(%{event: "new_sdp_offer", payload: payload}, socket) do
+    {:noreply, socket |> assign(:sdp_offers, socket.assigns.new_sdp_offer ++ [payload])}
+  end
+
+  def handle_info(%{event: "new_answer", payload: payload}, socket) do
+    {:noreply, socket |> assign(:answers, socket.assigns.answers ++ [payload])}
   end
 
   def remove_presences(socket, leaves) do
@@ -161,6 +213,52 @@ defmodule LittlechatWeb.Room.ShowLive do
       )
     end
 
+    {:noreply, socket}
+  end
+
+  def handle_event(
+        "new_ice_candidate",
+        payload,
+        %{
+          assigns: %{
+            current_user: current_user,
+            room: %{slug: slug}
+          }
+        } = socket
+      ) do
+    payload = Map.merge(payload, %{"from_user" => user_to_username(current_user)})
+
+    send_direct_message(slug, payload["toUser"], "new_ice_candidate", payload)
+    {:noreply, socket}
+  end
+
+  def handle_event(
+        "new_sdp_offer",
+        payload,
+        %{
+          assigns: %{
+            current_user: current_user,
+            room: %{slug: slug}
+          }
+        } = socket
+      ) do
+    payload = Map.merge(payload, %{"from_user" => user_to_username(current_user)})
+    send_direct_message(slug, payload["toUser"], "new_sdp_offer", payload)
+    {:noreply, socket}
+  end
+
+  def handle_event(
+        "new_answer",
+        payload,
+        %{
+          assigns: %{
+            current_user: current_user,
+            room: %{slug: slug}
+          }
+        } = socket
+      ) do
+    payload = Map.merge(payload, %{"from_user" => user_to_username(current_user)})
+    send_direct_message(slug, payload["toUser"], "new_answer", payload)
     {:noreply, socket}
   end
 end

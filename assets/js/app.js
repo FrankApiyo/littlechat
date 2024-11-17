@@ -142,9 +142,50 @@ function createPeerConnection(lv, fromUser, offer) {
 
 Hooks.HandleOfferRequest = {
   mounted() {
-    console.log("new offer request from: ", this.el.dataset.fromUserUsername)
-    let fromUser = this.el.dataset.fromUserUsername
+    console.log("new offer request from: ", this.el.dataset.fromUsername)
+    let fromUser = this.el.dataset.fromUsername
     createPeerConnection(this, fromUser)
+  }
+}
+
+Hooks.HandleIceCandidateOffer = {
+  mounted() {
+    let data = this.el.dataset
+    let fromUser = data.fromUsername
+    let iceCandidate = JSON.parse(data.iceCandidate)
+    let peerConnection = users[fromUser].peerConnection
+
+    console.log("new ice candidate from", fromUser, iceCandidate)
+
+    peerConnection.addIceCandidate(iceCandidate)
+  }
+}
+
+Hooks.HandleSdpOffer = {
+  mounted() {
+    let data = this.el.dataset
+    let fromUser = data.fromUsername
+    let sdp = data.sdp
+
+    if (sdp != "") {
+      console.log("new sdp OFFER from: ", data.fromUsername, data.sdp)
+
+      createPeerConnection(this, fromUser, sdp)
+    }
+  }
+}
+
+Hooks.HandleAnswer = {
+  mounted() {
+    let data = this.el.dataset
+    let fromUser = data.fromUsername
+    let sdp = data.sdp
+
+    if (sdp != "") {
+      console.log("new sdp ANSWER from: ", fromUser, sdp)
+
+      peerConnection.setRemoteDescription({ type: "answer", sdp: sdp })
+    }
   }
 }
 
